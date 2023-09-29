@@ -1,17 +1,10 @@
-import io
-import uvicorn
-import tensorflow as tf
-from fastapi import FastAPI, UploadFile
+import streamlit as st
 from PIL import Image
 import numpy as np
-import streamlit as st
-import threading
-
-# FastAPI Backend
-app = FastAPI()
+import tensorflow as tf
 
 # Load TensorFlow Lite model
-interpreter = tf.lite.Interpreter(model_path='app\model_self_op2.tflite')
+interpreter = tf.lite.Interpreter(model_path='model_self_op2.tflite')
 interpreter.allocate_tensors()
 
 # Get input and output details
@@ -20,7 +13,7 @@ output_details = interpreter.get_output_details()
 
 model_classes = ['lung adenocarcinomas', 'benign lung tissues', 'lung squamous cell carcinomas']
 
-# Function to preprocess image for FastAPI
+# Function to preprocess image for classification
 def preprocess_image(img):
     img = img.resize((224, 224))
     img = tf.keras.preprocessing.image.img_to_array(img)
@@ -28,7 +21,7 @@ def preprocess_image(img):
     img = img / 255.0
     return img
 
-# Function to predict class and confidence using FastAPI
+# Function to predict class and confidence
 def predict_image_class(img):
     img = preprocess_image(img)
     interpreter.set_tensor(input_details[0]['index'], img)
@@ -57,17 +50,3 @@ if uploaded_file is not None:
 
     except Exception as e:
         st.error(f"An error occurred: {str(e)}")
-
-
-# Run both FastAPI and Streamlit in separate threads
-def run_fastapi():
-    uvicorn.run(app, host='0.0.0.0', port=8000)
-
-def run_streamlit():
-    st.run()
-
-fastapi_thread = threading.Thread(target=run_fastapi)
-streamlit_thread = threading.Thread(target=run_streamlit)
-
-fastapi_thread.start()
-streamlit_thread.start()
